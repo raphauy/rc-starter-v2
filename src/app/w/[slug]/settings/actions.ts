@@ -3,73 +3,26 @@
 import { auth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { 
-  createWorkspace, 
   updateWorkspace, 
   deleteWorkspace,
   getWorkspaceBySlug,
   getWorkspaceById,
-  type CreateWorkspaceData 
+  isUserWorkspaceAdmin,
 } from "@/services/workspace-service"
 import { replaceWorkspaceImage, deleteImage } from "@/services/upload-service"
 
-export async function createWorkspaceAction(formData: FormData) {
+export async function updateWorkspaceUserAction(workspaceId: string, formData: FormData) {
   try {
     const session = await auth()
     
-    if (!session?.user || session.user.role !== "superadmin") {
+    if (!session?.user) {
       throw new Error("No autorizado")
     }
 
-    const name = formData.get("name") as string
-    const slug = formData.get("slug") as string
-    const description = formData.get("description") as string
-    const imageFile = formData.get("image") as File | null
-
-    // Validar que el slug no exista
-    const existingWorkspace = await getWorkspaceBySlug(slug)
-    if (existingWorkspace) {
-      throw new Error("Ya existe un workspace con este slug")
-    }
-
-    // Crear el workspace primero
-    const workspaceData: CreateWorkspaceData = {
-      name,
-      slug,
-      description: description || undefined
-    }
-
-    const newWorkspace = await createWorkspace(workspaceData)
-
-    // Si se subió una imagen, procesarla
-    if (imageFile && imageFile.size > 0) {
-      const uploadResult = await replaceWorkspaceImage({
-        file: imageFile,
-        workspaceId: newWorkspace.id
-      })
-      
-      // Actualizar el workspace con la URL de la imagen
-      await updateWorkspace(newWorkspace.id, {
-        image: uploadResult.url
-      })
-    }
-
-    revalidatePath("/admin/workspaces")
-    return { success: true, message: "Workspace creado correctamente" }
-  } catch (error) {
-    console.error("Error creando workspace:", error)
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : "Error creando workspace" 
-    }
-  }
-}
-
-export async function updateWorkspaceAction(workspaceId: string, formData: FormData) {
-  try {
-    const session = await auth()
-    
-    if (!session?.user || session.user.role !== "superadmin") {
-      throw new Error("No autorizado")
+    // Verificar que el usuario sea admin del workspace
+    const isAdmin = await isUserWorkspaceAdmin(session.user.id, workspaceId)
+    if (!isAdmin) {
+      throw new Error("No tienes permisos para actualizar este workspace")
     }
 
     const name = formData.get("name") as string
@@ -109,7 +62,8 @@ export async function updateWorkspaceAction(workspaceId: string, formData: FormD
       image: imageUrl || undefined
     })
 
-    revalidatePath("/admin/workspaces")
+    revalidatePath(`/w/${slug}/settings`)
+    revalidatePath(`/w/${slug}`)
     return { success: true, message: "Workspace actualizado correctamente" }
   } catch (error) {
     console.error("Error actualizando workspace:", error)
@@ -120,17 +74,23 @@ export async function updateWorkspaceAction(workspaceId: string, formData: FormD
   }
 }
 
-export async function deleteWorkspaceAction(workspaceId: string) {
+export async function deleteWorkspaceUserAction(workspaceId: string) {
   try {
     const session = await auth()
     
-    if (!session?.user || session.user.role !== "superadmin") {
+    if (!session?.user) {
       throw new Error("No autorizado")
+    }
+
+    // Verificar que el usuario sea admin del workspace
+    const isAdmin = await isUserWorkspaceAdmin(session.user.id, workspaceId)
+    if (!isAdmin) {
+      throw new Error("No tienes permisos para eliminar este workspace")
     }
 
     await deleteWorkspace(workspaceId)
 
-    revalidatePath("/admin/workspaces")
+    revalidatePath("/w")
     return { success: true, message: "Workspace eliminado correctamente" }
   } catch (error) {
     console.error("Error eliminando workspace:", error)
@@ -141,12 +101,18 @@ export async function deleteWorkspaceAction(workspaceId: string) {
   }
 }
 
-export async function deleteWorkspaceImageAction(workspaceId: string) {
+export async function deleteWorkspaceImageUserAction(workspaceId: string) {
   try {
     const session = await auth()
     
-    if (!session?.user || session.user.role !== "superadmin") {
+    if (!session?.user) {
       throw new Error("No autorizado")
+    }
+
+    // Verificar que el usuario sea admin del workspace
+    const isAdmin = await isUserWorkspaceAdmin(session.user.id, workspaceId)
+    if (!isAdmin) {
+      throw new Error("No tienes permisos para modificar este workspace")
     }
 
     // Obtener workspace actual
@@ -165,8 +131,9 @@ export async function deleteWorkspaceImageAction(workspaceId: string) {
       })
     }
 
-    revalidatePath("/admin/workspaces")
-    revalidatePath(`/admin/workspaces/${workspaceId}`)
+    const slug = workspace.slug
+    revalidatePath(`/w/${slug}/settings`)
+    revalidatePath(`/w/${slug}`)
     return { success: true, message: "Imagen eliminada correctamente" }
   } catch (error) {
     console.error("Error eliminando imagen:", error)

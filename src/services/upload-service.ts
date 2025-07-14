@@ -98,3 +98,70 @@ export async function replaceUserAvatar(input: UploadImageInput & { currentImage
     throw new Error('Error al reemplazar la imagen de avatar')
   }
 }
+
+/**
+ * Sube una imagen de workspace a Vercel Blob Storage
+ */
+export async function uploadWorkspaceImage(input: { file: File, workspaceId: string }) {
+  // Validar que sea un archivo de imagen
+  if (!input.file || !input.file.type.startsWith('image/')) {
+    throw new Error('El archivo debe ser una imagen')
+  }
+  
+  // Validar tamaño (máximo 2MB para logos)
+  const maxSize = 2 * 1024 * 1024 // 2MB
+  if (input.file.size > maxSize) {
+    throw new Error('La imagen no puede ser mayor a 2MB')
+  }
+  
+  try {
+    // Generar nombre único para el archivo
+    const timestamp = Date.now()
+    const fileExtension = input.file.name.split('.').pop() || 'jpg'
+    const fileName = `workspaces/${input.workspaceId}-${timestamp}.${fileExtension}`
+    
+    // Subir archivo a Vercel Blob
+    const blob = await put(fileName, input.file, {
+      access: 'public',
+      addRandomSuffix: false,
+    })
+    
+    return {
+      url: blob.url,
+      fileName: fileName,
+      size: input.file.size,
+      contentType: input.file.type
+    }
+  } catch (error) {
+    console.error('Error uploading workspace image:', error)
+    throw new Error('Error al subir la imagen del workspace')
+  }
+}
+
+/**
+ * Elimina la imagen anterior de un workspace y sube una nueva
+ */
+export async function replaceWorkspaceImage(input: { file: File, workspaceId: string, currentImageUrl?: string }) {
+  try {
+    // Subir nueva imagen
+    const newImage = await uploadWorkspaceImage({
+      file: input.file,
+      workspaceId: input.workspaceId
+    })
+    
+    // Eliminar imagen anterior si existe
+    if (input.currentImageUrl) {
+      try {
+        await deleteImage({ url: input.currentImageUrl })
+      } catch (error) {
+        // No fallar si no se puede eliminar la imagen anterior
+        console.warn('Could not delete previous workspace image:', error)
+      }
+    }
+    
+    return newImage
+  } catch (error) {
+    console.error('Error replacing workspace image:', error)
+    throw new Error('Error al reemplazar la imagen del workspace')
+  }
+}

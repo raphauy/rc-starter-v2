@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth"
 import { getWorkspaceBySlug, isUserInWorkspace, isUserWorkspaceAdmin } from "@/services/workspace-service"
 import { redirect, notFound } from "next/navigation"
 import { WorkspaceNav } from "./workspace-nav"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 interface WorkspaceLayoutProps {
   children: React.ReactNode
@@ -41,18 +42,26 @@ export default async function WorkspaceLayout({
       {/* Workspace Header */}
       <div className="bg-card border rounded-lg p-6">
         <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">
-              {workspace.name}
-            </h1>
-            {workspace.description && (
-              <p className="text-muted-foreground mt-1">
-                {workspace.description}
+          <div className="flex items-center gap-4">
+            <Avatar className="h-16 w-16">
+              <AvatarImage src={workspace.image || undefined} alt={workspace.name} />
+              <AvatarFallback className="text-lg">
+                {workspace.name.slice(0, 2).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <h1 className="text-2xl font-bold">
+                {workspace.name}
+              </h1>
+              {workspace.description && (
+                <p className="text-muted-foreground mt-1">
+                  {workspace.description}
+                </p>
+              )}
+              <p className="text-sm text-muted-foreground mt-2">
+                /{workspace.slug}
               </p>
-            )}
-            <p className="text-sm text-muted-foreground mt-2">
-              /{workspace.slug}
-            </p>
+            </div>
           </div>
         </div>
       </div>

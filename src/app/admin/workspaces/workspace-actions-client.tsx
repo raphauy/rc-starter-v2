@@ -82,7 +82,7 @@ export function WorkspaceActionsClient({ workspace }: WorkspaceActionsClientProp
         
         {/* Editar workspace */}
         <DropdownMenuItem asChild>
-          <Link href={`/admin/workspaces/${workspace.id}/edit`}>
+          <Link href={`/admin/workspaces/${workspace.id}/settings`}>
             <Edit className="mr-2 h-4 w-4" />
             Editar
           </Link>

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { ImageUpload } from "@/components/ui/image-upload"
 import { createWorkspaceAction, updateWorkspaceAction } from "./actions"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
@@ -14,6 +15,7 @@ type Workspace = {
   name: string
   slug: string
   description: string | null
+  image: string | null
   createdAt: Date
   updatedAt: Date
 }
@@ -25,6 +27,8 @@ interface WorkspaceFormProps {
 
 export function WorkspaceForm({ workspace, isEdit = false }: WorkspaceFormProps) {
   const [loading, setLoading] = useState(false)
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [currentImage, setCurrentImage] = useState(workspace?.image || null)
   const router = useRouter()
 
   // Función para generar slug automáticamente
@@ -42,6 +46,11 @@ export function WorkspaceForm({ workspace, isEdit = false }: WorkspaceFormProps)
     setLoading(true)
     
     try {
+      // Agregar imagen al formData si hay una
+      if (imageFile) {
+        formData.append("image", imageFile)
+      }
+      
       const result = isEdit 
         ? await updateWorkspaceAction(workspace!.id, formData)
         : await createWorkspaceAction(formData)
@@ -111,6 +120,20 @@ export function WorkspaceForm({ workspace, isEdit = false }: WorkspaceFormProps)
           placeholder="Descripción del workspace (opcional)"
           defaultValue={workspace?.description || ""}
           rows={3}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Imagen del Workspace</Label>
+        <ImageUpload
+          value={currentImage}
+          onChange={(file) => setImageFile(file)}
+          onRemove={() => {
+            setImageFile(null)
+            setCurrentImage(null)
+          }}
+          disabled={loading}
+          placeholder="Logo"
         />
       </div>
 

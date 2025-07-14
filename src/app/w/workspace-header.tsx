@@ -13,6 +13,8 @@ import { LogOut, Settings, User } from "lucide-react"
 import { signOut } from "next-auth/react"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { WorkspaceSelector } from "@/components/workspace-selector"
+import type { Workspace, WorkspaceUser } from "@prisma/client"
 
 interface WorkspaceHeaderProps {
   user: {
@@ -22,9 +24,10 @@ interface WorkspaceHeaderProps {
     role: string
     image?: string | null
   }
+  userWorkspaces: (WorkspaceUser & { workspace: Workspace })[]
 }
 
-export function WorkspaceHeader({ user }: WorkspaceHeaderProps) {
+export function WorkspaceHeader({ user, userWorkspaces }: WorkspaceHeaderProps) {
   const getInitials = (name: string | null, email: string) => {
     if (name) {
       return name
@@ -46,6 +49,14 @@ export function WorkspaceHeader({ user }: WorkspaceHeaderProps) {
             <Link href="/w" className="text-xl font-bold">
               RC Starter Kit
             </Link>
+            
+            {/* Workspace Selector */}
+            {userWorkspaces.length > 0 && (
+              <>
+                <span className="text-muted-foreground">/</span>
+                <WorkspaceSelector userWorkspaces={userWorkspaces} />
+              </>
+            )}
           </div>
 
           {/* Navigation */}

@@ -7,6 +7,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Users } from "lucide-react"
 import { getAllWorkspaces } from "@/services/workspace-service"
 import { WorkspaceActionsClient } from "./workspace-actions-client"
@@ -49,13 +50,21 @@ export async function WorkspacesList() {
               workspaces.map((workspace) => (
                 <TableRow key={workspace.id}>
                   <TableCell className="font-medium">
-                    <div className="space-y-1">
-                      <div className="font-medium">{workspace.name}</div>
-                      {workspace.description && (
-                        <div className="text-sm text-muted-foreground">
-                          {workspace.description}
-                        </div>
-                      )}
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={workspace.image || undefined} alt={workspace.name} />
+                        <AvatarFallback className="text-xs">
+                          {workspace.name.slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="space-y-1">
+                        <div className="font-medium">{workspace.name}</div>
+                        {workspace.description && (
+                          <div className="text-sm text-muted-foreground line-clamp-1">
+                            {workspace.description}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell>

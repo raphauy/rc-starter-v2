@@ -8,7 +8,8 @@ export const createWorkspaceSchema = z.object({
   slug: z.string()
     .min(1, "Slug requerido")
     .regex(/^[a-z0-9-]+$/, "Solo letras minúsculas, números y guiones"),
-  description: z.string().optional()
+  description: z.string().optional(),
+  image: z.string().optional()
 })
 
 export const updateWorkspaceSchema = createWorkspaceSchema.partial()
